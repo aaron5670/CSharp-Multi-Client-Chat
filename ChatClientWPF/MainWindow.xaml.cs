@@ -72,14 +72,12 @@ namespace _03_ChatClientWPF
             AddMessage("Connection closed");
         }
 
-        private void btnConnect_Click(object sender, RoutedEventArgs e)
+        private async void btnConnect_Click(object sender, RoutedEventArgs e)
         {
-            AddMessage("Connecting...");
-
-            //tcpClient = new TcpClient(txtIPServer.Text, txtPort.Text);
-            tcpClient = new TcpClient(txtIPServer.Text, 9000);
-            thread = new Thread(new ThreadStart(ReceiveData));
-            thread.Start();
+            AddMessage("[CLIENT]: Connecting...");
+            tcpClient = new TcpClient();
+            await tcpClient.ConnectAsync(txtIPServer.Text, 9000);
+            AddMessage("[CLIENT]: Connected!");
         }
 
         private void btnSend_Click(object sender, RoutedEventArgs e)
