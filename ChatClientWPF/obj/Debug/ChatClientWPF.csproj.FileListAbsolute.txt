@@ -1,0 +1,15 @@
+C:\Users\aaron\OneDrive\Bureaublad\HAN\NotS-WIN\NOTS_BP-1_Chat\ChatClientWPF\bin\Debug\ChatClientWPF.exe.config
+C:\Users\aaron\OneDrive\Bureaublad\HAN\NotS-WIN\NOTS_BP-1_Chat\ChatClientWPF\bin\Debug\ChatClientWPF.exe
+C:\Users\aaron\OneDrive\Bureaublad\HAN\NotS-WIN\NOTS_BP-1_Chat\ChatClientWPF\bin\Debug\ChatClientWPF.pdb
+C:\Users\aaron\OneDrive\Bureaublad\HAN\NotS-WIN\NOTS_BP-1_Chat\ChatClientWPF\obj\Debug\ChatClientWPF.csprojAssemblyReference.cache
+C:\Users\aaron\OneDrive\Bureaublad\HAN\NotS-WIN\NOTS_BP-1_Chat\ChatClientWPF\obj\Debug\MainWindow.g.cs
+C:\Users\aaron\OneDrive\Bureaublad\HAN\NotS-WIN\NOTS_BP-1_Chat\ChatClientWPF\obj\Debug\App.g.cs
+C:\Users\aaron\OneDrive\Bureaublad\HAN\NotS-WIN\NOTS_BP-1_Chat\ChatClientWPF\obj\Debug\ChatClientWPF_MarkupCompile.cache
+C:\Users\aaron\OneDrive\Bureaublad\HAN\NotS-WIN\NOTS_BP-1_Chat\ChatClientWPF\obj\Debug\ChatClientWPF_MarkupCompile.lref
+C:\Users\aaron\OneDrive\Bureaublad\HAN\NotS-WIN\NOTS_BP-1_Chat\ChatClientWPF\obj\Debug\MainWindow.baml
+C:\Users\aaron\OneDrive\Bureaublad\HAN\NotS-WIN\NOTS_BP-1_Chat\ChatClientWPF\obj\Debug\ChatClientWPF.g.resources
+C:\Users\aaron\OneDrive\Bureaublad\HAN\NotS-WIN\NOTS_BP-1_Chat\ChatClientWPF\obj\Debug\_03_ChatClientWPF.Properties.Resources.resources
+C:\Users\aaron\OneDrive\Bureaublad\HAN\NotS-WIN\NOTS_BP-1_Chat\ChatClientWPF\obj\Debug\ChatClientWPF.csproj.GenerateResource.cache
+C:\Users\aaron\OneDrive\Bureaublad\HAN\NotS-WIN\NOTS_BP-1_Chat\ChatClientWPF\obj\Debug\ChatClientWPF.csproj.CoreCompileInputs.cache
+C:\Users\aaron\OneDrive\Bureaublad\HAN\NotS-WIN\NOTS_BP-1_Chat\ChatClientWPF\obj\Debug\ChatClientWPF.exe
+C:\Users\aaron\OneDrive\Bureaublad\HAN\NotS-WIN\NOTS_BP-1_Chat\ChatClientWPF\obj\Debug\ChatClientWPF.pdb

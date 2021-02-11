@@ -1,0 +1,59 @@
+﻿<Window x:Class="_03_ChatClientWPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:_03_ChatClientWPF"
+        mc:Ignorable="d"
+        Title="NOTS Chat Client" Height="450" Width="500" MinWidth="500" MinHeight="450">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Vertical">
+            <GroupBox Header="Client Settings" Padding="10" Margin="10" >
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Label>Name</Label>
+                    <Label Grid.Row="1">IP Address</Label>
+                    <Label Grid.Row="2">Port</Label>
+                    <Label Grid.Row="3">Buffer Size</Label>
+
+                    <TextBox x:Name="txtNameClient" Grid.Column="1" Text="Client 1" Margin="5"/>
+                    <TextBox x:Name="txtIPServer" Grid.Row="1" Grid.Column="1" Text="127.0.0.1" Margin="5"/>
+                    <TextBox x:Name="txtPort" Grid.Row="2" Grid.Column="1" Text="9000" Margin="5"/>
+                    <TextBox x:Name="txtBufferSize" Grid.Row="3" Grid.Column="1" Text="1024" Margin="5"/>
+
+                    <Button x:Name="btnConnect" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Content="Connect" Padding="5" Margin="10" Click="btnConnect_Click"/>
+                </Grid>
+            </GroupBox>
+
+            <GroupBox Header="Send Message" Padding="10" Margin="10">
+                <StackPanel Orientation="Vertical">
+                    <Label Margin="5">Message</Label>
+                    <TextBox x:Name="txtMessage" Margin="5" />
+                    <Button x:Name="btnSend" Padding="5" Margin="10" Click="btnSend_Click">Send</Button>
+                </StackPanel>
+            </GroupBox>
+        </StackPanel>
+
+        <GroupBox Grid.Column="1" Header="Chats" Padding="10" Margin="10">
+            <ListBox x:Name="listChats">
+                <ListBoxItem>No chat messages yet...</ListBoxItem>
+            </ListBox>
+        </GroupBox>
+    </Grid>
+</Window>

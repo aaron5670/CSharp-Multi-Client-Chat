@@ -1,0 +1,15 @@
+C:\Users\Martijn Driessen\source\repos\NOTS_Uitwerking_opdracht_1\03_ChatClientWPF\obj\Debug\03_ChatClientWPF.csprojResolveAssemblyReference.cache
+C:\Users\Martijn Driessen\source\repos\NOTS_Uitwerking_opdracht_1\03_ChatClientWPF\obj\Debug\MainWindow.g.cs
+C:\Users\Martijn Driessen\source\repos\NOTS_Uitwerking_opdracht_1\03_ChatClientWPF\obj\Debug\App.g.cs
+C:\Users\Martijn Driessen\source\repos\NOTS_Uitwerking_opdracht_1\03_ChatClientWPF\obj\Debug\03_ChatClientWPF_MarkupCompile.cache
+C:\Users\Martijn Driessen\source\repos\NOTS_Uitwerking_opdracht_1\03_ChatClientWPF\obj\Debug\03_ChatClientWPF_MarkupCompile.lref
+C:\Users\Martijn Driessen\source\repos\NOTS_Uitwerking_opdracht_1\03_ChatClientWPF\bin\Debug\03_ChatClientWPF.exe.config
+C:\Users\Martijn Driessen\source\repos\NOTS_Uitwerking_opdracht_1\03_ChatClientWPF\bin\Debug\03_ChatClientWPF.exe
+C:\Users\Martijn Driessen\source\repos\NOTS_Uitwerking_opdracht_1\03_ChatClientWPF\bin\Debug\03_ChatClientWPF.pdb
+C:\Users\Martijn Driessen\source\repos\NOTS_Uitwerking_opdracht_1\03_ChatClientWPF\obj\Debug\MainWindow.baml
+C:\Users\Martijn Driessen\source\repos\NOTS_Uitwerking_opdracht_1\03_ChatClientWPF\obj\Debug\03_ChatClientWPF.g.resources
+C:\Users\Martijn Driessen\source\repos\NOTS_Uitwerking_opdracht_1\03_ChatClientWPF\obj\Debug\_03_ChatClientWPF.Properties.Resources.resources
+C:\Users\Martijn Driessen\source\repos\NOTS_Uitwerking_opdracht_1\03_ChatClientWPF\obj\Debug\03_ChatClientWPF.csproj.GenerateResource.Cache
+C:\Users\Martijn Driessen\source\repos\NOTS_Uitwerking_opdracht_1\03_ChatClientWPF\obj\Debug\03_ChatClientWPF.csproj.CoreCompileInputs.cache
+C:\Users\Martijn Driessen\source\repos\NOTS_Uitwerking_opdracht_1\03_ChatClientWPF\obj\Debug\03_ChatClientWPF.exe
+C:\Users\Martijn Driessen\source\repos\NOTS_Uitwerking_opdracht_1\03_ChatClientWPF\obj\Debug\03_ChatClientWPF.pdb
