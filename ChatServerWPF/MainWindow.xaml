@@ -36,11 +36,11 @@
                 <Label Grid.Row="2">Buffer Size</Label>
 
 
-                <TextBox Grid.Column="1" Text="NOTS Chat Server" Margin="5"/>
-                <TextBox Grid.Row="1" Grid.Column="1" Text="9000" Margin="5"/>
-                <TextBox Grid.Row="2" Grid.Column="1" Text="1024" Margin="5"/>
+                <TextBox x:Name="serverName" Grid.Column="1" Text="NOTS Chat Server" Margin="5"/>
+                <TextBox x:Name="serverPortValue" Grid.Row="1" Grid.Column="1" Text="9000" Margin="5"/>
+                <TextBox x:Name="serverBufferSizeValue" Grid.Row="2" Grid.Column="1" Text="1024" Margin="5"/>
 
-                <Button x:Name="btnStartStop" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Content="Start" Padding="5" Margin="10" Click="btnStartStop_Click"/>
+                <Button x:Name="btnStartStop" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Content="Start" Padding="5" Margin="10" Click="btnStartStop_Click" />
             </Grid>
         </GroupBox>
 

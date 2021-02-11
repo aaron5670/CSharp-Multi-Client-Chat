@@ -24,9 +24,15 @@ namespace _03_ChatServerWPF
     public partial class MainWindow : Window
     {
         // Stap 3:
-        TcpClient tcpClient;
-        NetworkStream networkStream;
-        Thread thread;
+        private TcpClient tcpClient;
+        private NetworkStream networkStream;
+        private Thread thread;
+
+        //Works
+        private TcpListener tcpListener;
+        private Boolean serverStarted;
+        private List<TcpClient> clientList = new List<TcpClient>();
+        private CancellationTokenSource cancellation;
 
         public MainWindow()
         {
@@ -42,12 +48,12 @@ namespace _03_ChatServerWPF
         // Stap 7:
         private void ReceiveData()
         {
-            int bufferSize = 1024;            
+            int bufferSize = 1024;
             string message = "";
             byte[] buffer = new byte[bufferSize];
 
             networkStream = tcpClient.GetStream();
-            
+
             AddMessage("Connected!");
 
             while (true)
@@ -74,14 +80,65 @@ namespace _03_ChatServerWPF
 
         private void btnStartStop_Click(object sender, RoutedEventArgs e)
         {
-            TcpListener tcpListener = new TcpListener(IPAddress.Any, 9000);
-            tcpListener.Start();
+            if ((string) btnStartStop.Content == "Start")
+            {
+                btnStartStop.Content = "Stop";
+                StartServer();
+            }
+            else
+            {
+                btnStartStop.Content = "Start";
+                StopServer();
+            }
+        }
 
-            AddMessage("Listening for client.");
+        private void StartServer()
+        {
+            try
+            {
+                var serverPort = ParseStringToInt(serverPortValue.Text);
+                var serverBufferSize = ParseStringToInt(serverBufferSizeValue.Text);
 
-            tcpClient = tcpListener.AcceptTcpClient();
-            thread = new Thread(new ThreadStart(ReceiveData));
-            thread.Start();
+                serverStarted = true;
+
+                tcpListener = new TcpListener(IPAddress.Any, serverPort);
+                tcpListener.Start();
+                
+                AddMessage($"[SERVER]: Started on port {serverPort.ToString()}");
+                Listen();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                AddMessage("[SERVER]: Another server is already running!");
+            }
+        }
+
+        private void Listen()
+        {
+            Task.Run(async () =>
+            {
+                while (serverStarted)
+                {
+                    var client = await tcpListener.AcceptTcpClientAsync();
+                    clientList.Add(client);
+                    AddMessage("[SERVER]: Client joined!");
+                }
+            });
+        }
+
+        private void StopServer()
+        {
+            try
+            {
+                serverStarted = false;
+                AddMessage("[SERVER]: Stopped");
+                tcpListener.Stop();
+            }
+            catch (Exception e)
+            {
+                AddMessage(e.Message);
+            }
         }
 
         private void btnSend_Click(object sender, RoutedEventArgs e)
@@ -94,6 +151,14 @@ namespace _03_ChatServerWPF
             AddMessage(message);
             txtMessage.Clear();
             txtMessage.Focus();
+        }
+
+        private int ParseStringToInt(string stringVal)
+        {
+            int intVal;
+            int.TryParse(stringVal, out intVal);
+
+            return intVal;
         }
     }
 }
