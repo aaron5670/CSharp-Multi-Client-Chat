@@ -37,15 +37,15 @@
                     <TextBox x:Name="txtPort" Grid.Row="2" Grid.Column="1" Text="9000" Margin="5"/>
                     <TextBox x:Name="txtBufferSize" Grid.Row="3" Grid.Column="1" Text="1024" Margin="5"/>
 
-                    <Button x:Name="btnConnect" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Content="Connect" Padding="5" Margin="10" Click="btnConnect_Click"/>
+                    <Button x:Name="btnConnect" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Content="Connect" Padding="5" Margin="10" Click="btnConnectDisconnect_Click"/>
                 </Grid>
             </GroupBox>
 
             <GroupBox Header="Send Message" Padding="10" Margin="10">
                 <StackPanel Orientation="Vertical">
                     <Label Margin="5">Message</Label>
-                    <TextBox x:Name="txtMessage" Margin="5" />
-                    <Button x:Name="btnSend" Padding="5" Margin="10" Click="btnSend_Click">Send</Button>
+                    <TextBox x:Name="txtMessage" Margin="5" IsEnabled="False" />
+                    <Button x:Name="btnSend" Padding="5" Margin="10" Click="btnSend_Click" IsEnabled="False">Send</Button>
                 </StackPanel>
             </GroupBox>
         </StackPanel>
