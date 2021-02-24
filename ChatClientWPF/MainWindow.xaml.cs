@@ -1,66 +1,28 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace _03_ChatClientWPF
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
-        // Stap 3:
-        TcpClient tcpClient;
-        NetworkStream networkStream;
-        Thread thread;
+        private TcpClient _tcpClient;
+        private NetworkStream _networkStream;
 
         public MainWindow()
         {
             InitializeComponent();
         }
 
-        // Stap 5:
         private void AddMessage(string message)
         {
             Dispatcher.Invoke(() => listChats.Items.Add(message));
-        }
-
-        private async void ReceiveData(int bufferSize)
-        {
-            var buffer = new byte[bufferSize];
-            networkStream = tcpClient.GetStream();
-
-            while (networkStream.CanRead)
-            {
-                var message = "";
-                
-                while (message.IndexOf("~") < 0)
-                {
-                    var bytes = await networkStream.ReadAsync(buffer, 0, bufferSize);
-                    message = Encoding.ASCII.GetString(buffer, 0, bytes);
-                }
-
-                message = message.Remove(message.Length - 1);
-                AddMessage(message);
-            }
         }
 
         private async void btnConnectDisconnect_Click(object sender, RoutedEventArgs e)
@@ -68,25 +30,23 @@ namespace _03_ChatClientWPF
             var clientName = txtNameClient.Text;
             var ipAddress = txtIPServer.Text;
             var port = txtPort.Text;
-            var bufferSize = txtBufferSize.Text;
 
-            // tcpClient = new TcpClient();
-            // await tcpClient.ConnectAsync(txtIPServer.Text, 9000);
-            // AddMessage("[CLIENT]: Connected!");
-
-            if (DataValidator(clientName, ipAddress, port, bufferSize))
+            if (DataValidator(clientName, ipAddress, port, txtBufferSize.Text))
             {
                 if ((string) btnConnect.Content == "Connect")
                 {
+                    var bufferSize = ParseStringToInt(txtBufferSize.Text);
                     btnConnect.Content = "Disconnect";
+                    btnConnect.IsEnabled = false;
                     txtNameClient.IsEnabled = false;
                     txtIPServer.IsEnabled = false;
                     txtPort.IsEnabled = false;
                     txtBufferSize.IsEnabled = false;
                     AddMessage("[CLIENT]: ⏳ Connecting...");
-                    await CreateConnection(clientName);
+                    await CreateConnection(clientName, bufferSize);
                     txtMessage.IsEnabled = true;
                     btnSend.IsEnabled = true;
+                    btnConnect.IsEnabled = true;
                 }
                 else
                 {
@@ -105,21 +65,26 @@ namespace _03_ChatClientWPF
             }
         }
 
-        private async Task CreateConnection(string clientName)
+        private async Task CreateConnection(string clientName, int bufferSize)
         {
             try
             {
-                tcpClient = new TcpClient();
-                await tcpClient.ConnectAsync(txtIPServer.Text, 9000);
-                networkStream = tcpClient.GetStream();
+                _tcpClient = new TcpClient();
+                await _tcpClient.ConnectAsync(txtIPServer.Text, 9000);
+                _networkStream = _tcpClient.GetStream();
 
                 await Task.Run(() => SendConnectionData(clientName));
-                await Task.Run(() => ReceiveData(ParseStringToInt("1024")));
+                await Task.Run(() => ReceiveData(bufferSize));
             }
             catch (Exception e)
             {
                 Debug.WriteLine(e);
-                MessageBox.Show("Could not create a connection with the server", "Connection error");
+                AddMessage("[CLIENT]: ❌ Could not create a connection with the server.");
+                btnConnect.Content = "Connect";
+                txtNameClient.IsEnabled = true;
+                txtIPServer.IsEnabled = true;
+                txtPort.IsEnabled = true;
+                txtBufferSize.IsEnabled = true;
             }
         }
 
@@ -127,17 +92,58 @@ namespace _03_ChatClientWPF
         {
             try
             {
-                if (!networkStream.CanWrite) return;
+                if (!_networkStream.CanWrite) return;
 
                 var message = "";
                 message += name;
-                message += "~CONNECT";
+                message += "CONNECT~";
                 var clientMessageByteArray = Encoding.ASCII.GetBytes(message);
-                await networkStream.WriteAsync(clientMessageByteArray, 0, clientMessageByteArray.Length);
+                await _networkStream.WriteAsync(clientMessageByteArray, 0, clientMessageByteArray.Length);
             }
             catch
             {
                 MessageBox.Show("❌ Can't connect to the server, try again later!", "Client");
+            }
+        }
+
+        // private async void ReceiveData(int bufferSize)
+        // {
+        //     var buffer = new byte[bufferSize];
+        //     _networkStream = _tcpClient.GetStream();
+        //
+        //     while (_networkStream.CanRead)
+        //     {
+        //         var message = "";
+        //         
+        //         while (message.IndexOf("~") < 0)
+        //         {
+        //             var bytes = await _networkStream.ReadAsync(buffer, 0, bufferSize);
+        //             message = Encoding.ASCII.GetString(buffer, 0, bytes);
+        //         }
+        //
+        //         message = message.Remove(message.Length - 1);
+        //         AddMessage(message);
+        //     }
+        // }
+
+        private async void ReceiveData(int bufferSize)
+        {
+            var buffer = new byte[bufferSize];
+            _networkStream = _tcpClient.GetStream();
+
+            while (_networkStream.CanRead)
+            {
+                string incomingData = "", message;
+                
+                while (incomingData.IndexOf("~") < 0)
+                {
+                    var bytes = await _networkStream.ReadAsync(buffer, 0, bufferSize);
+                    message = Encoding.ASCII.GetString(buffer, 0, bytes);
+                    incomingData += message;
+                }
+
+                message = incomingData.Remove(incomingData.Length - 1);
+                AddMessage(message);
             }
         }
 
@@ -164,11 +170,11 @@ namespace _03_ChatClientWPF
 
         private async Task SendMessageToServer(string clientName, string message)
         {
-            if (networkStream.CanWrite)
+            if (_networkStream.CanWrite)
             {
-                var data = $"{clientName}: {message}~MESSAGE";
+                var data = $"{clientName}: {message}MESSAGE~";
                 var clientMessageByteArray = Encoding.ASCII.GetBytes(data);
-                await networkStream.WriteAsync(clientMessageByteArray, 0, clientMessageByteArray.Length);
+                await _networkStream.WriteAsync(clientMessageByteArray, 0, clientMessageByteArray.Length);
             }
 
             txtMessage.Clear();
@@ -196,7 +202,7 @@ namespace _03_ChatClientWPF
 
         private bool MessageValidator(string message)
         {
-            var allowedRegex = new Regex("^[a-zA-Z0-9 ]*$");
+            var allowedRegex = new Regex("[^~]+");
             return (allowedRegex.IsMatch(message) || message.Length == 0);
         }
 

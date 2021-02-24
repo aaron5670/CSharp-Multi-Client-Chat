@@ -1,45 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace _03_ChatServerWPF
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
         // Stap 3:
-        private TcpClient tcpClient;
-        private NetworkStream networkStream;
-        private Thread thread;
+        private TcpClient _tcpClient;
+        private NetworkStream _networkStream;
 
         //Works
-        private TcpListener tcpListener;
-        private Boolean serverStarted;
-        private List<TcpClient> clientList = new List<TcpClient>();
+        private TcpListener _tcpListener;
+        private bool _serverStarted;
+        private List<TcpClient> _clientList = new List<TcpClient>();
 
         public MainWindow()
         {
             InitializeComponent();
         }
 
-        // Stap 5:
         private void AddMessage(string message)
         {
             this.Dispatcher.Invoke(() => listChats.Items.Add(message));
@@ -65,21 +50,21 @@ namespace _03_ChatServerWPF
         {
             try
             {
-                tcpListener = new TcpListener(IPAddress.Any, serverPort);
-                tcpListener.Start();
+                _tcpListener = new TcpListener(IPAddress.Any, serverPort);
+                _tcpListener.Start();
 
-                serverStarted = true;
+                _serverStarted = true;
 
                 AddMessage($"[SERVER]: Started on port {serverPort.ToString()}");
 
-                while (serverStarted)
+                while (_serverStarted)
                 {
                     Debug.WriteLine("Waiting for client...");
-                    tcpClient = await tcpListener.AcceptTcpClientAsync();
+                    _tcpClient = await _tcpListener.AcceptTcpClientAsync();
                     AddMessage("[SERVER]: Client connected!");
-                    clientList.Add(tcpClient);
+                    _clientList.Add(_tcpClient);
                     Debug.WriteLine("Client connected");
-                    await Task.Run(() => ReceiveData(tcpClient, ParseStringToInt("1024")));
+                    await Task.Run(() => ReceiveData(_tcpClient, serverBufferSize));
                 }
             }
             catch (Exception ex)
@@ -114,7 +99,7 @@ namespace _03_ChatServerWPF
             try
             {
                 AddMessage("[SERVER]: Stopped");
-                tcpListener.Stop();
+                _tcpListener.Stop();
             }
             catch (Exception e)
             {
@@ -125,45 +110,53 @@ namespace _03_ChatServerWPF
         private async void ReceiveData(TcpClient tcpClient, int bufferSize)
         {
             var buffer = new byte[bufferSize];
-            networkStream = tcpClient.GetStream();
+            var networkStream = tcpClient.GetStream();
 
-            const string connectSignal = "~CONNECT";
-            const string messageSignal = "~MESSAGE";
-            const string disconnectSignal = "~DISCONNECT";
+            const string connectSignal = "CONNECT~";
+            const string messageSignal = "MESSAGE~";
+            const string disconnectSignal = "DISCONNECT~";
 
             while (networkStream.CanRead)
             {
-                var message = "";
+                var incomingData = "";
+                string message = "";
 
-                while (message.IndexOf("~") < 0)
+                while (incomingData.IndexOf("~") < 0)
                 {
                     Debug.WriteLine("✅ Incoming message");
                     var bytes = await networkStream.ReadAsync(buffer, 0, bufferSize);
                     message = Encoding.ASCII.GetString(buffer, 0, bytes);
-                    Debug.WriteLine(message);
+                    incomingData += message;
+                    Debug.WriteLine("message: " + message);
                 }
 
-                if (message.EndsWith(connectSignal))
+                /***
+                 * New client connected
+                 */
+                if (incomingData.EndsWith(connectSignal))
                 {
-                    var clientName = message.Remove(message.Length - connectSignal.Length);
+                    var clientName = incomingData.Remove(incomingData.Length - connectSignal.Length);
                     AddClientToClientList(clientName);
                     await SendMessageToClients($"[SERVER]: {clientName} connected!~");
                 }
 
-                if (message.EndsWith(messageSignal))
+                /***
+                 * New chat message
+                 */
+                if (incomingData.EndsWith(messageSignal))
                 {
-                    message = message.Remove(message.Length - messageSignal.Length);
-                    AddMessage(message);
-                    await SendMessageToClients($"{message}~");
+                    var chatMessage = incomingData.Remove(incomingData.Length - messageSignal.Length);
+                    AddMessage(chatMessage);
+                    await SendMessageToClients($"{chatMessage}~");
                 }
 
-                Debug.WriteLine("Message: " + message);
+                Debug.WriteLine("Message: " + incomingData);
             }
         }
 
         private void AddClientToClientList(string clientName)
         {
-            if (clientList.Count == 1)
+            if (_clientList.Count == 1)
             {
                 Dispatcher.Invoke((() => listClients.Items.RemoveAt(0)));
                 Dispatcher.Invoke((() => listClients.Items.Add(clientName)));
@@ -176,16 +169,15 @@ namespace _03_ChatServerWPF
 
         private async Task SendMessageToClients(string message)
         {
-            if (clientList.Count > 0)
+            if (_clientList.Count > 0)
             {
-                foreach (var client in clientList)
+                foreach (var client in _clientList)
                 {
-                    networkStream = client.GetStream();
-                    if (!networkStream.CanRead) continue;
+                    _networkStream = client.GetStream();
+                    if (!_networkStream.CanRead) continue;
 
                     var serverMessageByteArray = Encoding.ASCII.GetBytes(message);
-                    await networkStream.WriteAsync(serverMessageByteArray, 0, serverMessageByteArray.Length);
-                    Debug.WriteLine("Message send a client (must be multiple execute");
+                    await _networkStream.WriteAsync(serverMessageByteArray, 0, serverMessageByteArray.Length);
                 }
             }
         }
@@ -195,11 +187,11 @@ namespace _03_ChatServerWPF
             var message = txtMessage.Text;
 
             var buffer = Encoding.ASCII.GetBytes(message);
-            networkStream.Write(buffer, 0, buffer.Length);
+            _networkStream.Write(buffer, 0, buffer.Length);
 
             await SendMessageToClients($"[SERVER]: {message}~");
             
-            AddMessage($"[SERVER]: {message}~");
+            AddMessage($"[SERVER]: {message}");
             txtMessage.Clear();
             txtMessage.Focus();
         }
