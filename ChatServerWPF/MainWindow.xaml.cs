@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -11,12 +12,7 @@ namespace _03_ChatServerWPF
 {
     public partial class MainWindow
     {
-        // Stap 3:
-        private TcpClient _tcpClient;
         private NetworkStream _networkStream;
-
-        //Works
-        private TcpListener _tcpListener;
         private bool _serverStarted;
         private List<TcpClient> _clientList = new List<TcpClient>();
 
@@ -27,7 +23,7 @@ namespace _03_ChatServerWPF
 
         private void AddMessage(string message)
         {
-            this.Dispatcher.Invoke(() => listChats.Items.Add(message));
+            Dispatcher.Invoke(() => listChats.Items.Add(message));
         }
 
         private async void btnStartStop_Click(object sender, RoutedEventArgs e)
@@ -50,8 +46,8 @@ namespace _03_ChatServerWPF
         {
             try
             {
-                _tcpListener = new TcpListener(IPAddress.Any, serverPort);
-                _tcpListener.Start();
+                TcpListener tcpListener = new TcpListener(IPAddress.Any, serverPort);
+                tcpListener.Start();
 
                 _serverStarted = true;
 
@@ -59,51 +55,22 @@ namespace _03_ChatServerWPF
 
                 while (_serverStarted)
                 {
-                    Debug.WriteLine("Waiting for client...");
-                    _tcpClient = await _tcpListener.AcceptTcpClientAsync();
+                    Debug.WriteLine("Test #1");
+                    var tcpClient = await tcpListener.AcceptTcpClientAsync();
                     AddMessage("[SERVER]: Client connected!");
-                    _clientList.Add(_tcpClient);
-                    Debug.WriteLine("Client connected");
-                    await Task.Run(() => ReceiveData(_tcpClient, serverBufferSize));
+                    _clientList.Add(tcpClient);
+                    Debug.WriteLine("Test #2");
+                    await Task.Run(() => ReceiveData(tcpClient, serverBufferSize));
+                    Debug.WriteLine("Test #3");
                 }
+                
+                Debug.WriteLine("SERVER IS STOPPED!!!");
+                tcpListener.Stop();
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
                 AddMessage("[SERVER]: Another server is already running!");
-            }
-        }
-
-        // private void Listen()
-        // {
-        //     Task.Run(async () =>
-        //     {
-        //         var client = await tcpListener.AcceptTcpClientAsync();
-        //         clientList.Add(client);
-        //         AddMessage("[SERVER]: Client joined!");
-        //     });
-        // }
-
-        // private async Task Listen()
-        // {
-        //     while (serverStarted)
-        //     {
-        //         tcpClient = await tcpListener.AcceptTcpClientAsync();
-        //         clientList.Add(tcpClient);
-        //         //Task.Run(() => ReceiveData(tcpClient, ParseStringToInt("1024")));
-        //     }
-        // }
-
-        private void StopServer()
-        {
-            try
-            {
-                AddMessage("[SERVER]: Stopped");
-                _tcpListener.Stop();
-            }
-            catch (Exception e)
-            {
-                AddMessage(e.Message);
             }
         }
 
@@ -114,21 +81,35 @@ namespace _03_ChatServerWPF
 
             const string connectSignal = "CONNECT~";
             const string messageSignal = "MESSAGE~";
-            const string disconnectSignal = "DISCONNECT~";
+            const string serverDisconnectSignal = "DISCONNECT_SERVER~";
+            const string clientDisconnectSignal = "DISCONNECTED_CLIENT~";
 
             while (networkStream.CanRead)
             {
                 var incomingData = "";
                 string message = "";
 
-                while (incomingData.IndexOf("~") < 0)
+                try
                 {
-                    Debug.WriteLine("✅ Incoming message");
-                    var bytes = await networkStream.ReadAsync(buffer, 0, bufferSize);
-                    message = Encoding.ASCII.GetString(buffer, 0, bytes);
-                    incomingData += message;
-                    Debug.WriteLine("message: " + message);
+                    while (incomingData.IndexOf("~") < 0)
+                    {
+                        Debug.WriteLine("✅ Incoming message");
+                        var bytes = await networkStream.ReadAsync(buffer, 0, bufferSize);
+                        message = Encoding.ASCII.GetString(buffer, 0, bytes);
+                        incomingData += message;
+                    }
                 }
+                catch (IOException)
+                {
+                    break;
+                }
+                catch (ObjectDisposedException)
+                {
+                    networkStream.Close();
+                    break;
+                }
+
+                Debug.WriteLine($"Message: {incomingData}");
 
                 /***
                  * New client connected
@@ -136,7 +117,7 @@ namespace _03_ChatServerWPF
                 if (incomingData.EndsWith(connectSignal))
                 {
                     var clientName = incomingData.Remove(incomingData.Length - connectSignal.Length);
-                    AddClientToClientList(clientName);
+                    Dispatcher.Invoke((() => listClients.Items.Add(clientName)));
                     await SendMessageToClients($"[SERVER]: {clientName} connected!~");
                 }
 
@@ -150,20 +131,41 @@ namespace _03_ChatServerWPF
                     await SendMessageToClients($"{chatMessage}~");
                 }
 
-                Debug.WriteLine("Message: " + incomingData);
+                /***
+                 * Client disconnected
+                 */
+                if (incomingData.EndsWith(clientDisconnectSignal))
+                {
+                    message = incomingData.Remove(incomingData.Length - clientDisconnectSignal.Length);
+                    AddMessage(message);
+                    await SendMessageToClients($"{message}~");
+                    await SendDisconnectMessageToClient(tcpClient, clientDisconnectSignal);
+                    Dispatcher.Invoke(() => listClients.Items.RemoveAt(_clientList.IndexOf(tcpClient)));
+                    _clientList.Remove(tcpClient);
+                }
             }
         }
-
-        private void AddClientToClientList(string clientName)
+        
+        private void StopServer()
         {
-            if (_clientList.Count == 1)
+            try
             {
-                Dispatcher.Invoke((() => listClients.Items.RemoveAt(0)));
-                Dispatcher.Invoke((() => listClients.Items.Add(clientName)));
+                foreach (var client in _clientList)
+                {
+                    Debug.WriteLine("Client X stopped!");
+                    client.Close();
+                }
+
+                _clientList = new List<TcpClient>();
+                Dispatcher.Invoke(() => listClients.Items.Clear());
+
+                _serverStarted = false;
+
+                AddMessage("[SERVER]: Stopped");
             }
-            else
+            catch (Exception e)
             {
-                Dispatcher.Invoke((() => listClients.Items.Add(clientName)));
+                AddMessage(e.Message);
             }
         }
 
@@ -175,10 +177,20 @@ namespace _03_ChatServerWPF
                 {
                     _networkStream = client.GetStream();
                     if (!_networkStream.CanRead) continue;
-                    
+
                     var serverMessageByteArray = Encoding.ASCII.GetBytes(message);
                     await _networkStream.WriteAsync(serverMessageByteArray, 0, serverMessageByteArray.Length);
                 }
+            }
+        }
+
+        private async Task SendDisconnectMessageToClient(TcpClient tcpClient, string message)
+        {
+            _networkStream = tcpClient.GetStream();
+            if (_networkStream.CanRead)
+            {
+                var serverMessageByteArray = Encoding.ASCII.GetBytes(message);
+                await _networkStream.WriteAsync(serverMessageByteArray, 0, serverMessageByteArray.Length);
             }
         }
 

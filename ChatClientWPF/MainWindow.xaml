@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:_03_ChatClientWPF"
         mc:Ignorable="d"
+        Closing="CloseClientConnection"
         Title="NOTS Chat Client" Height="450" Width="500" MinWidth="500" MinHeight="450">
     <Grid>
         <Grid.ColumnDefinitions>

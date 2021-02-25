@@ -45,9 +45,7 @@
         </GroupBox>
 
         <GroupBox Grid.Row="1" Header="Clients" Padding="10" Margin="10">
-            <ListBox x:Name="listClients">
-                <ListBoxItem>No clients connected yet</ListBoxItem>
-            </ListBox>
+            <ListBox x:Name="listClients"/>
         </GroupBox>
 
         <GroupBox Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" Header="Chats" Padding="10" Margin="10">

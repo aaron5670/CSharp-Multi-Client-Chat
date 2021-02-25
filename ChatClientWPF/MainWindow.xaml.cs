@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -50,6 +51,7 @@ namespace _03_ChatClientWPF
                 }
                 else
                 {
+                    await DisconnectClient();
                     btnConnect.Content = "Connect";
                     txtNameClient.IsEnabled = true;
                     txtIPServer.IsEnabled = true;
@@ -108,6 +110,7 @@ namespace _03_ChatClientWPF
 
         private async void ReceiveData(int bufferSize)
         {
+            const string clientDisconnectSignal = "DISCONNECTED_CLIENT~";
             var buffer = new byte[bufferSize];
             var networkStream = _tcpClient.GetStream();
 
@@ -122,7 +125,13 @@ namespace _03_ChatClientWPF
                     var encodedMessage = Encoding.ASCII.GetString(buffer, 0, bytes);
                     incomingMessage += encodedMessage;
                 }
-                
+
+                if (incomingMessage.EndsWith(clientDisconnectSignal))
+                {
+                    AddMessage("Disconnected!");
+                    break;
+                }
+
                 message = incomingMessage.Remove(incomingMessage.Length - 1);
                 AddMessage(message);
             }
@@ -160,6 +169,26 @@ namespace _03_ChatClientWPF
 
             txtMessage.Clear();
             txtMessage.Focus();
+        }
+
+        private async Task DisconnectClient()
+        {
+            const string clientDisconnectSignal = "DISCONNECTED_CLIENT~";
+            var disconnectMessage = txtNameClient.Text + ": is disconnected!";
+            disconnectMessage += clientDisconnectSignal;
+
+            _networkStream = _tcpClient.GetStream();
+
+            if (_networkStream.CanRead)
+            {
+                var clientMessageByteArray = Encoding.ASCII.GetBytes(disconnectMessage);
+                await _networkStream.WriteAsync(clientMessageByteArray, 0, clientMessageByteArray.Length);
+            }
+        }
+
+        private async void CloseClientConnection(object sender, CancelEventArgs e)
+        {
+            if (_tcpClient.Connected) await DisconnectClient();
         }
 
         private bool DataValidator(string clientName, string ipAddress, string port, string bufferSize)
