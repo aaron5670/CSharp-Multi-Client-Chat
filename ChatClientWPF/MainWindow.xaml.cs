@@ -106,26 +106,6 @@ namespace _03_ChatClientWPF
             }
         }
 
-        // private async void ReceiveData(int bufferSize)
-        // {
-        //     var buffer = new byte[bufferSize];
-        //     _networkStream = _tcpClient.GetStream();
-        //
-        //     while (_networkStream.CanRead)
-        //     {
-        //         var message = "";
-        //         
-        //         while (message.IndexOf("~") < 0)
-        //         {
-        //             var bytes = await _networkStream.ReadAsync(buffer, 0, bufferSize);
-        //             message = Encoding.ASCII.GetString(buffer, 0, bytes);
-        //         }
-        //
-        //         message = message.Remove(message.Length - 1);
-        //         AddMessage(message);
-        //     }
-        // }
-
         private async void ReceiveData(int bufferSize)
         {
             var buffer = new byte[bufferSize];
@@ -133,16 +113,15 @@ namespace _03_ChatClientWPF
 
             while (_networkStream.CanRead)
             {
-                string incomingData = "", message;
-                
-                while (incomingData.IndexOf("~") < 0)
+                var message = "";
+
+                while (message.IndexOf("~") < 0)
                 {
                     var bytes = await _networkStream.ReadAsync(buffer, 0, bufferSize);
                     message = Encoding.ASCII.GetString(buffer, 0, bytes);
-                    incomingData += message;
                 }
 
-                message = incomingData.Remove(incomingData.Length - 1);
+                message = message.Remove(message.Length - 1);
                 AddMessage(message);
             }
         }
