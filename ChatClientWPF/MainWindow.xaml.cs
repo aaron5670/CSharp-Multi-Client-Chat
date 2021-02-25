@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -111,6 +112,7 @@ namespace _03_ChatClientWPF
         private async void ReceiveData(int bufferSize)
         {
             const string clientDisconnectSignal = "DISCONNECTED_CLIENT~";
+            const string serverDisconnectSignal = "DISCONNECTED_SERVER~";
             var buffer = new byte[bufferSize];
             var networkStream = _tcpClient.GetStream();
 
@@ -119,16 +121,39 @@ namespace _03_ChatClientWPF
                 var incomingMessage = "";
                 var message = "";
 
-                while (incomingMessage.IndexOf("~") < 0)
+                try
                 {
-                    var bytes = await networkStream.ReadAsync(buffer, 0, bufferSize);
-                    var encodedMessage = Encoding.ASCII.GetString(buffer, 0, bytes);
-                    incomingMessage += encodedMessage;
+                    while (incomingMessage.IndexOf("~") < 0)
+                    {
+                        var bytes = await networkStream.ReadAsync(buffer, 0, bufferSize);
+                        var encodedMessage = Encoding.ASCII.GetString(buffer, 0, bytes);
+                        incomingMessage += encodedMessage;
+                    }
+                }
+                catch (IOException)
+                {
+                    AddMessage("[SERVER]: ❌ Connection is lost!");
+                    break;
                 }
 
                 if (incomingMessage.EndsWith(clientDisconnectSignal))
                 {
-                    AddMessage("Disconnected!");
+                    AddMessage("[CLIENT]: ❌ Disconnected!");
+                    break;
+                }
+                
+                if (incomingMessage.EndsWith(serverDisconnectSignal))
+                {
+                    message = incomingMessage.Remove(incomingMessage.Length - serverDisconnectSignal.Length);
+                    AddMessage(message);
+
+                    Dispatcher.Invoke(() => btnConnect.Content = "Connect");
+                    Dispatcher.Invoke(() => txtNameClient.IsEnabled = true);
+                    Dispatcher.Invoke(() => txtIPServer.IsEnabled = true);
+                    Dispatcher.Invoke(() => txtPort.IsEnabled = true);
+                    Dispatcher.Invoke(() => txtBufferSize.IsEnabled = true);
+                    Dispatcher.Invoke(() => txtMessage.IsEnabled = false);
+                    Dispatcher.Invoke(() => btnSend.IsEnabled = false);
                     break;
                 }
 

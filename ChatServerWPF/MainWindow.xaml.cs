@@ -12,6 +12,7 @@ namespace _03_ChatServerWPF
 {
     public partial class MainWindow
     {
+        private TcpListener tcpListener;
         private NetworkStream _networkStream;
         private bool _serverStarted;
         private List<TcpClient> _clientList = new List<TcpClient>();
@@ -33,7 +34,7 @@ namespace _03_ChatServerWPF
                 btnStartStop.Content = "Stop";
                 var serverPort = ParseStringToInt(serverPortValue.Text);
                 var serverBufferSize = ParseStringToInt(serverBufferSizeValue.Text);
-                await StartServer(serverPort, serverBufferSize);
+                await Listener(serverPort, serverBufferSize);
             }
             else
             {
@@ -42,18 +43,20 @@ namespace _03_ChatServerWPF
             }
         }
 
-        private async Task StartServer(int serverPort, int serverBufferSize)
+        private async Task Listener(int serverPort, int serverBufferSize, bool stopServer = false)
         {
-            try
+            if (!stopServer)
             {
-                TcpListener tcpListener = new TcpListener(IPAddress.Any, serverPort);
-                tcpListener.Start();
-
                 _serverStarted = true;
-
+                tcpListener = new TcpListener(IPAddress.Any, serverPort);
+                tcpListener.Start();
                 AddMessage($"[SERVER]: Started on port {serverPort.ToString()}");
+            }
+            else _serverStarted = false;
 
-                while (_serverStarted)
+            while (_serverStarted)
+            {
+                try
                 {
                     Debug.WriteLine("Test #1");
                     var tcpClient = await tcpListener.AcceptTcpClientAsync();
@@ -63,15 +66,14 @@ namespace _03_ChatServerWPF
                     await Task.Run(() => ReceiveData(tcpClient, serverBufferSize));
                     Debug.WriteLine("Test #3");
                 }
-                
-                Debug.WriteLine("SERVER IS STOPPED!!!");
-                tcpListener.Stop();
+                catch (ObjectDisposedException)
+                {
+                    break;
+                }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-                AddMessage("[SERVER]: Another server is already running!");
-            }
+
+            Debug.WriteLine("SERVER IS STOPPED!!!");
+            tcpListener.Stop();
         }
 
         private async void ReceiveData(TcpClient tcpClient, int bufferSize)
@@ -145,28 +147,28 @@ namespace _03_ChatServerWPF
                 }
             }
         }
-        
-        private void StopServer()
+
+        private async void StopServer()
         {
-            try
+            const string disconnectingMessage = "[SERVER]: Server is closed!DISCONNECTED_SERVER~";
+            await Task.Run(() => SendMessageToClients(disconnectingMessage));
+            
+            foreach (var client in _clientList)
             {
-                foreach (var client in _clientList)
-                {
-                    Debug.WriteLine("Client X stopped!");
-                    client.Close();
-                }
-
-                _clientList = new List<TcpClient>();
-                Dispatcher.Invoke(() => listClients.Items.Clear());
-
-                _serverStarted = false;
-
-                AddMessage("[SERVER]: Stopped");
+                Debug.WriteLine("Client X stopped!");
+                client.Close();
             }
-            catch (Exception e)
-            {
-                AddMessage(e.Message);
-            }
+
+            _clientList = new List<TcpClient>();
+            Dispatcher.Invoke(() => listClients.Items.Clear());
+
+            _serverStarted = false;
+
+            AddMessage("[SERVER]: Stopped");
+
+            var serverPort = ParseStringToInt(serverPortValue.Text);
+            var serverBufferSize = ParseStringToInt(serverBufferSizeValue.Text);
+            await Listener(serverPort, serverBufferSize, true);
         }
 
         private async Task SendMessageToClients(string message)
@@ -177,7 +179,6 @@ namespace _03_ChatServerWPF
                 {
                     _networkStream = client.GetStream();
                     if (!_networkStream.CanRead) continue;
-
                     var serverMessageByteArray = Encoding.ASCII.GetBytes(message);
                     await _networkStream.WriteAsync(serverMessageByteArray, 0, serverMessageByteArray.Length);
                 }
