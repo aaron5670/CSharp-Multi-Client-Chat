@@ -175,25 +175,11 @@ namespace _03_ChatServerWPF
                 {
                     _networkStream = client.GetStream();
                     if (!_networkStream.CanRead) continue;
-
+                    
                     var serverMessageByteArray = Encoding.ASCII.GetBytes(message);
                     await _networkStream.WriteAsync(serverMessageByteArray, 0, serverMessageByteArray.Length);
                 }
             }
-        }
-
-        private async void btnSend_Click(object sender, RoutedEventArgs e)
-        {
-            var message = txtMessage.Text;
-
-            var buffer = Encoding.ASCII.GetBytes(message);
-            _networkStream.Write(buffer, 0, buffer.Length);
-
-            await SendMessageToClients($"[SERVER]: {message}~");
-            
-            AddMessage($"[SERVER]: {message}");
-            txtMessage.Clear();
-            txtMessage.Focus();
         }
 
         private int ParseStringToInt(string stringVal)

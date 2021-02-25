@@ -50,14 +50,6 @@
             </ListBox>
         </GroupBox>
 
-        <GroupBox Grid.Row="2" Header="Send Message" Padding="10" Margin="10">
-            <StackPanel Orientation="Vertical">
-                <Label Margin="5">Message</Label>
-                <TextBox x:Name="txtMessage" Margin="5" />
-                <Button x:Name="btnSend" Padding="5" Margin="10" Click="btnSend_Click">Send</Button>
-            </StackPanel>
-        </GroupBox>
-
         <GroupBox Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" Header="Chats" Padding="10" Margin="10">
             <ListBox x:Name="listChats">
                 <ListBoxItem>No chat messages yet...</ListBoxItem>

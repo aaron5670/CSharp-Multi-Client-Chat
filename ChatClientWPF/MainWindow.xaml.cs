@@ -29,13 +29,13 @@ namespace _03_ChatClientWPF
         {
             var clientName = txtNameClient.Text;
             var ipAddress = txtIPServer.Text;
-            var port = txtPort.Text;
 
-            if (DataValidator(clientName, ipAddress, port, txtBufferSize.Text))
+            if (DataValidator(clientName, ipAddress, txtPort.Text, txtBufferSize.Text))
             {
                 if ((string) btnConnect.Content == "Connect")
                 {
                     var bufferSize = ParseStringToInt(txtBufferSize.Text);
+                    var port = ParseStringToInt(txtPort.Text);
                     btnConnect.Content = "Disconnect";
                     btnConnect.IsEnabled = false;
                     txtNameClient.IsEnabled = false;
@@ -43,7 +43,7 @@ namespace _03_ChatClientWPF
                     txtPort.IsEnabled = false;
                     txtBufferSize.IsEnabled = false;
                     AddMessage("[CLIENT]: ⏳ Connecting...");
-                    await CreateConnection(clientName, bufferSize);
+                    await CreateConnection(ipAddress, port, clientName, bufferSize);
                     txtMessage.IsEnabled = true;
                     btnSend.IsEnabled = true;
                     btnConnect.IsEnabled = true;
@@ -65,12 +65,12 @@ namespace _03_ChatClientWPF
             }
         }
 
-        private async Task CreateConnection(string clientName, int bufferSize)
+        private async Task CreateConnection(string ipAddress, int port, string clientName, int bufferSize)
         {
             try
             {
                 _tcpClient = new TcpClient();
-                await _tcpClient.ConnectAsync(txtIPServer.Text, 9000);
+                await _tcpClient.ConnectAsync(ipAddress, port);
                 _networkStream = _tcpClient.GetStream();
 
                 await Task.Run(() => SendConnectionData(clientName));
@@ -109,19 +109,21 @@ namespace _03_ChatClientWPF
         private async void ReceiveData(int bufferSize)
         {
             var buffer = new byte[bufferSize];
-            _networkStream = _tcpClient.GetStream();
+            var networkStream = _tcpClient.GetStream();
 
-            while (_networkStream.CanRead)
+            while (networkStream.CanRead)
             {
+                var incomingMessage = "";
                 var message = "";
 
-                while (message.IndexOf("~") < 0)
+                while (incomingMessage.IndexOf("~") < 0)
                 {
-                    var bytes = await _networkStream.ReadAsync(buffer, 0, bufferSize);
-                    message = Encoding.ASCII.GetString(buffer, 0, bytes);
+                    var bytes = await networkStream.ReadAsync(buffer, 0, bufferSize);
+                    var encodedMessage = Encoding.ASCII.GetString(buffer, 0, bytes);
+                    incomingMessage += encodedMessage;
                 }
-
-                message = message.Remove(message.Length - 1);
+                
+                message = incomingMessage.Remove(incomingMessage.Length - 1);
                 AddMessage(message);
             }
         }
@@ -131,7 +133,7 @@ namespace _03_ChatClientWPF
             try
             {
                 var message = txtMessage.Text;
-                if (MessageValidator(message))
+                if (MessageIsValid(message))
                 {
                     await SendMessageToServer(txtNameClient.Text, txtMessage.Text);
                 }
@@ -173,13 +175,14 @@ namespace _03_ChatClientWPF
             if (!port.All(char.IsDigit) && ParseStringToInt(port) <= maxPortNumber)
                 return false;
 
-            if (!bufferSize.All(char.IsDigit) || bufferSize.Length == 0)
+            // var bufferSizeInt = ParseStringToInt(bufferSize);
+            if (!bufferSize.All(char.IsDigit) || ParseStringToInt(bufferSize) < 1 || bufferSize.Length == 0)
                 return false;
 
             return true;
         }
 
-        private bool MessageValidator(string message)
+        private bool MessageIsValid(string message)
         {
             var allowedRegex = new Regex("[^~]+");
             return (allowedRegex.IsMatch(message) || message.Length == 0);
