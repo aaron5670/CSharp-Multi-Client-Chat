@@ -33,12 +33,12 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <Label>Name</Label>
+                <Label>IP Address</Label>
                 <Label Grid.Row="1">Port</Label>
                 <Label Grid.Row="2">Buffer Size</Label>
 
 
-                <TextBox x:Name="serverName" Grid.Column="1" Text="NOTS Chat Server" Margin="5"/>
+                <TextBox x:Name="serverIpAddress" Grid.Column="1" Text="127.0.0.1" Margin="5"/>
                 <TextBox x:Name="serverPortValue" Grid.Row="1" Grid.Column="1" Text="9000" Margin="5"/>
                 <TextBox x:Name="serverBufferSizeValue" Grid.Row="2" Grid.Column="1" Text="1024" Margin="5"/>
 

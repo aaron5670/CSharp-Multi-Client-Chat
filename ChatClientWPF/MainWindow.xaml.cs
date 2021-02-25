@@ -294,7 +294,6 @@ namespace _03_ChatClientWPF
 
             const int maxPortNumber = 65535;
             const int minPortNumber = 0;
-
             if (!port.All(char.IsDigit) || !(ParseStringToInt(port) > minPortNumber) ||
                 !(ParseStringToInt(port) <= maxPortNumber))
                 return false;

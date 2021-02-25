@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -17,14 +18,14 @@ namespace _03_ChatServerWPF
         private NetworkStream _networkStream;
         private List<TcpClient> _clientList = new List<TcpClient>();
         private bool _serverStarted;
-
+        
         private const string ConnectSignal = "CONNECT~";
         private const string MessageSignal = "MESSAGE~";
         private const string ServerDisconnectSignal = "DISCONNECT_SERVER~";
         private const string ClientDisconnectSignal = "DISCONNECTED_CLIENT~";
 
         /// <summary>
-        /// 
+        /// Initialize main window
         /// </summary>
         public MainWindow()
         {
@@ -32,7 +33,7 @@ namespace _03_ChatServerWPF
         }
 
         /// <summary>
-        /// 
+        /// Add messages to messages ListBox
         /// </summary>
         /// <param name="message"></param>
         private void AddMessage(string message)
@@ -41,7 +42,7 @@ namespace _03_ChatServerWPF
         }
 
         /// <summary>
-        /// 
+        /// Start server and stop server button functionality
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -49,10 +50,17 @@ namespace _03_ChatServerWPF
         {
             if ((string) btnStartStop.Content == "Start")
             {
-                btnStartStop.Content = "Stop";
-                var serverPort = ParseStringToInt(serverPortValue.Text);
-                var serverBufferSize = ParseStringToInt(serverBufferSizeValue.Text);
-                await Listener(serverPort, serverBufferSize);
+                if (IsValidIpAddress(serverIpAddress.Text) && IsValidPort(serverPortValue.Text))
+                {
+                    btnStartStop.Content = "Stop";
+                    var serverPort = ParseStringToInt(serverPortValue.Text);
+                    var serverBufferSize = ParseStringToInt(serverBufferSizeValue.Text);
+                    await Listener(serverPort, serverBufferSize);
+                }
+                else
+                {
+                    MessageBox.Show("IP Address or server port is invalid!");
+                }
             }
             else
             {
@@ -105,7 +113,7 @@ namespace _03_ChatServerWPF
         }
 
         /// <summary>
-        /// 
+        /// This method reads all incoming 
         /// </summary>
         /// <param name="tcpClient"></param>
         /// <param name="bufferSize"></param>
@@ -175,25 +183,21 @@ namespace _03_ChatServerWPF
         }
 
         /// <summary>
-        /// 
+        /// This method triggers the stop functionality
         /// </summary>
         private async void StopServer()
         {
             var disconnectingMessage = $"[SERVER]: Server is closed!{ServerDisconnectSignal}";
             await Task.Run(() => SendMessageToClients(disconnectingMessage));
 
-            foreach (var client in _clientList)
-            {
-                Debug.WriteLine("Client X stopped!");
-                client.Close();
-            }
+            foreach (var client in _clientList) client.Close();
 
             _clientList = new List<TcpClient>();
             Dispatcher.Invoke(() => listClients.Items.Clear());
 
             _serverStarted = false;
 
-            AddMessage("[SERVER]: Stopped");
+            AddMessage("[SERVER]: Server is closed!");
 
             var serverPort = ParseStringToInt(serverPortValue.Text);
             var serverBufferSize = ParseStringToInt(serverBufferSizeValue.Text);
@@ -201,7 +205,7 @@ namespace _03_ChatServerWPF
         }
 
         /// <summary>
-        /// 
+        /// This method sends messages to all connected clients
         /// </summary>
         /// <param name="message"></param>
         /// <returns></returns>
@@ -220,7 +224,7 @@ namespace _03_ChatServerWPF
         }
 
         /// <summary>
-        /// 
+        /// Sends a disconnect message/signal to the specified client
         /// </summary>
         /// <param name="tcpClient"></param>
         /// <param name="message"></param>
@@ -236,7 +240,8 @@ namespace _03_ChatServerWPF
         }
 
         /// <summary>
-        /// 
+        /// Method is triggered when user closes the application.
+        /// This method will stop the server.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -251,14 +256,43 @@ namespace _03_ChatServerWPF
         }
 
         /// <summary>
-        /// 
+        /// Parse string to integer
         /// </summary>
         /// <param name="stringVal"></param>
-        /// <returns></returns>
+        /// <returns>
+        /// Returns integer
+        /// </returns>
         private int ParseStringToInt(string stringVal)
         {
             int.TryParse(stringVal, out var intVal);
             return intVal;
+        }
+
+        /// <summary>
+        /// Validates IP Address
+        /// </summary>
+        /// <param name="ipAddress"></param>
+        /// <returns>
+        /// True if IP Address is valid
+        /// </returns>
+        private bool IsValidIpAddress(string ipAddress)
+        {
+            return IPAddress.TryParse(ipAddress, out var ip);
+        }
+
+        /// <summary>
+        /// Validates Server port
+        /// </summary>
+        /// <param name="port"></param>
+        /// <returns>
+        /// True if server port is valid
+        /// </returns>
+        private bool IsValidPort(string port)
+        {
+            const int maxPortNumber = 65535;
+            const int minPortNumber = 0;
+            return (port.All(char.IsDigit) && (ParseStringToInt(port) > minPortNumber) &&
+                    (ParseStringToInt(port) <= maxPortNumber));
         }
     }
 }
