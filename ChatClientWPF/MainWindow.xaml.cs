@@ -12,21 +12,36 @@ using System.Windows;
 
 namespace _03_ChatClientWPF
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public partial class MainWindow
     {
         private TcpClient _tcpClient;
         private NetworkStream _networkStream;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
         private void AddMessage(string message)
         {
             Dispatcher.Invoke(() => listChats.Items.Add(message));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private async void btnConnectDisconnect_Click(object sender, RoutedEventArgs e)
         {
             var clientName = txtNameClient.Text;
@@ -68,6 +83,14 @@ namespace _03_ChatClientWPF
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ipAddress"></param>
+        /// <param name="port"></param>
+        /// <param name="clientName"></param>
+        /// <param name="bufferSize"></param>
+        /// <returns></returns>
         private async Task CreateConnection(string ipAddress, int port, string clientName, int bufferSize)
         {
             try
@@ -91,6 +114,10 @@ namespace _03_ChatClientWPF
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
         private async void SendConnectionData(string name)
         {
             try
@@ -109,6 +136,10 @@ namespace _03_ChatClientWPF
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bufferSize"></param>
         private async void ReceiveData(int bufferSize)
         {
             const string clientDisconnectSignal = "DISCONNECTED_CLIENT~";
@@ -148,7 +179,7 @@ namespace _03_ChatClientWPF
                     AddMessage("[CLIENT]: ❌ Disconnected!");
                     break;
                 }
-                
+
                 if (incomingMessage.EndsWith(serverDisconnectSignal))
                 {
                     message = incomingMessage.Remove(incomingMessage.Length - serverDisconnectSignal.Length);
@@ -169,6 +200,12 @@ namespace _03_ChatClientWPF
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <exception cref="FormatException"></exception>
         private async void btnSend_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -190,6 +227,12 @@ namespace _03_ChatClientWPF
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="clientName"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
         private async Task SendMessageToServer(string clientName, string message)
         {
             if (_networkStream.CanWrite)
@@ -203,6 +246,10 @@ namespace _03_ChatClientWPF
             txtMessage.Focus();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private async Task DisconnectClient()
         {
             const string clientDisconnectSignal = "DISCONNECTED_CLIENT~";
@@ -218,11 +265,24 @@ namespace _03_ChatClientWPF
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private async void CloseClientConnection(object sender, CancelEventArgs e)
         {
-            if (_tcpClient.Connected) await DisconnectClient();
+            if (_tcpClient != null && _tcpClient.Connected) await DisconnectClient();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="clientName"></param>
+        /// <param name="ipAddress"></param>
+        /// <param name="port"></param>
+        /// <param name="bufferSize"></param>
+        /// <returns></returns>
         private bool DataValidator(string clientName, string ipAddress, string port, string bufferSize)
         {
             var allowedRegex = new Regex("^[a-zA-Z0-9 ]*$");
@@ -234,8 +294,9 @@ namespace _03_ChatClientWPF
 
             const int maxPortNumber = 65535;
             const int minPortNumber = 0;
-            
-            if (!port.All(char.IsDigit) || !(ParseStringToInt(port) > minPortNumber) || !(ParseStringToInt(port) <= maxPortNumber))
+
+            if (!port.All(char.IsDigit) || !(ParseStringToInt(port) > minPortNumber) ||
+                !(ParseStringToInt(port) <= maxPortNumber))
                 return false;
 
             if (!bufferSize.All(char.IsDigit) || ParseStringToInt(bufferSize) < 1 || bufferSize.Length == 0)
@@ -244,11 +305,21 @@ namespace _03_ChatClientWPF
             return true;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
         private bool MessageIsValid(string message)
         {
             return message.Contains("~") == false && message.Length > 0;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stringVal"></param>
+        /// <returns></returns>
         private int ParseStringToInt(string stringVal)
         {
             int.TryParse(stringVal, out var intVal);

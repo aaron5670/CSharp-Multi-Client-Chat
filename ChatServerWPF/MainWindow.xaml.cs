@@ -70,31 +70,38 @@ namespace _03_ChatServerWPF
         /// <returns></returns>
         private async Task Listener(int serverPort, int serverBufferSize, bool stopServer = false)
         {
-            if (!stopServer)
+            try
             {
-                _serverStarted = true;
-                _tcpListener = new TcpListener(IPAddress.Any, serverPort);
-                _tcpListener.Start();
-                AddMessage($"[SERVER]: Started on port {serverPort.ToString()}");
-            }
-            else _serverStarted = false;
+                if (!stopServer)
+                {
+                    _serverStarted = true;
+                    _tcpListener = new TcpListener(IPAddress.Any, serverPort);
+                    _tcpListener.Start();
+                    AddMessage($"[SERVER]: Started on port {serverPort.ToString()}");
+                }
+                else _serverStarted = false;
 
-            while (_serverStarted)
+                while (_serverStarted)
+                {
+                    try
+                    {
+                        var tcpClient = await _tcpListener.AcceptTcpClientAsync();
+                        AddMessage("[SERVER]: Client connected!");
+                        _clientList.Add(tcpClient);
+                        await Task.Run(() => ReceiveData(tcpClient, serverBufferSize));
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        break;
+                    }
+                }
+
+                _tcpListener.Stop();
+            }
+            catch (SocketException)
             {
-                try
-                {
-                    var tcpClient = await _tcpListener.AcceptTcpClientAsync();
-                    AddMessage("[SERVER]: Client connected!");
-                    _clientList.Add(tcpClient);
-                    await Task.Run(() => ReceiveData(tcpClient, serverBufferSize));
-                }
-                catch (ObjectDisposedException)
-                {
-                    break;
-                }
+                MessageBox.Show("Server port already in use");
             }
-
-            _tcpListener.Stop();
         }
 
         /// <summary>
@@ -131,7 +138,7 @@ namespace _03_ChatServerWPF
                     networkStream.Close();
                     break;
                 }
-                
+
                 /***
                  * New client connected
                  */
@@ -172,7 +179,7 @@ namespace _03_ChatServerWPF
         /// </summary>
         private async void StopServer()
         {
-            const string disconnectingMessage = "[SERVER]: Server is closed!DISCONNECTED_SERVER~";
+            var disconnectingMessage = $"[SERVER]: Server is closed!{ServerDisconnectSignal}";
             await Task.Run(() => SendMessageToClients(disconnectingMessage));
 
             foreach (var client in _clientList)
@@ -235,9 +242,9 @@ namespace _03_ChatServerWPF
         /// <param name="e"></param>
         private async void CloseServerConnection(object sender, CancelEventArgs e)
         {
-            if (_tcpListener.Server.Connected)
+            if (_tcpListener != null && _tcpListener.Server.Connected)
             {
-                const string disconnectingMessage = "[SERVER]: Server is closed!DISCONNECTED_SERVER~";
+                var disconnectingMessage = $"[SERVER]: Server is closed!{ServerDisconnectSignal}~";
                 await Task.Run(() => SendMessageToClients(disconnectingMessage));
                 _tcpListener.Stop();
             }
