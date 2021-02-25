@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:_03_ChatClientWPF"
         mc:Ignorable="d"
         Closing="CloseClientConnection"
-        Title="NOTS Chat Client" Height="450" Width="500" MinWidth="500" MinHeight="450">
+        Title="NOTS Chat Client" Height="450" Width="500" MinWidth="500" MinHeight="450"
+        Background="Aquamarine">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*" />

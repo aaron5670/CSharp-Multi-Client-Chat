@@ -5,7 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:_03_ChatServerWPF"
         mc:Ignorable="d"
-        Title="NOTS Chat Server" Height="650" Width="800" MinWidth="500">
+        Closing="CloseServerConnection"
+        Title="NOTS Chat Server" Height="650" Width="800" MinWidth="500"
+        Background="LightSteelBlue">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

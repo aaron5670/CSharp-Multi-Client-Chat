@@ -132,7 +132,14 @@ namespace _03_ChatClientWPF
                 }
                 catch (IOException)
                 {
-                    AddMessage("[SERVER]: ❌ Connection is lost!");
+                    AddMessage("[SERVER]: ❌ Connection with server is lost!");
+                    Dispatcher.Invoke(() => btnConnect.Content = "Connect");
+                    Dispatcher.Invoke(() => txtNameClient.IsEnabled = true);
+                    Dispatcher.Invoke(() => txtIPServer.IsEnabled = true);
+                    Dispatcher.Invoke(() => txtPort.IsEnabled = true);
+                    Dispatcher.Invoke(() => txtBufferSize.IsEnabled = true);
+                    Dispatcher.Invoke(() => txtMessage.IsEnabled = false);
+                    Dispatcher.Invoke(() => btnSend.IsEnabled = false);
                     break;
                 }
 
@@ -226,10 +233,11 @@ namespace _03_ChatClientWPF
                 return false;
 
             const int maxPortNumber = 65535;
-            if (!port.All(char.IsDigit) && ParseStringToInt(port) <= maxPortNumber)
+            const int minPortNumber = 0;
+            
+            if (!port.All(char.IsDigit) || !(ParseStringToInt(port) > minPortNumber) || !(ParseStringToInt(port) <= maxPortNumber))
                 return false;
 
-            // var bufferSizeInt = ParseStringToInt(bufferSize);
             if (!bufferSize.All(char.IsDigit) || ParseStringToInt(bufferSize) < 1 || bufferSize.Length == 0)
                 return false;
 
@@ -238,15 +246,12 @@ namespace _03_ChatClientWPF
 
         private bool MessageIsValid(string message)
         {
-            var allowedRegex = new Regex("[^~]+");
-            return (allowedRegex.IsMatch(message) || message.Length == 0);
+            return message.Contains("~") == false && message.Length > 0;
         }
 
         private int ParseStringToInt(string stringVal)
         {
-            int intVal;
-            int.TryParse(stringVal, out intVal);
-
+            int.TryParse(stringVal, out var intVal);
             return intVal;
         }
     }

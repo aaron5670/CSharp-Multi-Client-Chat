@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -12,21 +13,38 @@ namespace _03_ChatServerWPF
 {
     public partial class MainWindow
     {
-        private TcpListener tcpListener;
+        private TcpListener _tcpListener;
         private NetworkStream _networkStream;
-        private bool _serverStarted;
         private List<TcpClient> _clientList = new List<TcpClient>();
+        private bool _serverStarted;
 
+        private const string ConnectSignal = "CONNECT~";
+        private const string MessageSignal = "MESSAGE~";
+        private const string ServerDisconnectSignal = "DISCONNECT_SERVER~";
+        private const string ClientDisconnectSignal = "DISCONNECTED_CLIENT~";
+
+        /// <summary>
+        /// 
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
         private void AddMessage(string message)
         {
             Dispatcher.Invoke(() => listChats.Items.Add(message));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private async void btnStartStop_Click(object sender, RoutedEventArgs e)
         {
             if ((string) btnStartStop.Content == "Start")
@@ -43,13 +61,20 @@ namespace _03_ChatServerWPF
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="serverPort"></param>
+        /// <param name="serverBufferSize"></param>
+        /// <param name="stopServer"></param>
+        /// <returns></returns>
         private async Task Listener(int serverPort, int serverBufferSize, bool stopServer = false)
         {
             if (!stopServer)
             {
                 _serverStarted = true;
-                tcpListener = new TcpListener(IPAddress.Any, serverPort);
-                tcpListener.Start();
+                _tcpListener = new TcpListener(IPAddress.Any, serverPort);
+                _tcpListener.Start();
                 AddMessage($"[SERVER]: Started on port {serverPort.ToString()}");
             }
             else _serverStarted = false;
@@ -58,13 +83,10 @@ namespace _03_ChatServerWPF
             {
                 try
                 {
-                    Debug.WriteLine("Test #1");
-                    var tcpClient = await tcpListener.AcceptTcpClientAsync();
+                    var tcpClient = await _tcpListener.AcceptTcpClientAsync();
                     AddMessage("[SERVER]: Client connected!");
                     _clientList.Add(tcpClient);
-                    Debug.WriteLine("Test #2");
                     await Task.Run(() => ReceiveData(tcpClient, serverBufferSize));
-                    Debug.WriteLine("Test #3");
                 }
                 catch (ObjectDisposedException)
                 {
@@ -72,19 +94,18 @@ namespace _03_ChatServerWPF
                 }
             }
 
-            Debug.WriteLine("SERVER IS STOPPED!!!");
-            tcpListener.Stop();
+            _tcpListener.Stop();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tcpClient"></param>
+        /// <param name="bufferSize"></param>
         private async void ReceiveData(TcpClient tcpClient, int bufferSize)
         {
             var buffer = new byte[bufferSize];
             var networkStream = tcpClient.GetStream();
-
-            const string connectSignal = "CONNECT~";
-            const string messageSignal = "MESSAGE~";
-            const string serverDisconnectSignal = "DISCONNECT_SERVER~";
-            const string clientDisconnectSignal = "DISCONNECTED_CLIENT~";
 
             while (networkStream.CanRead)
             {
@@ -110,15 +131,13 @@ namespace _03_ChatServerWPF
                     networkStream.Close();
                     break;
                 }
-
-                Debug.WriteLine($"Message: {incomingData}");
-
+                
                 /***
                  * New client connected
                  */
-                if (incomingData.EndsWith(connectSignal))
+                if (incomingData.EndsWith(ConnectSignal))
                 {
-                    var clientName = incomingData.Remove(incomingData.Length - connectSignal.Length);
+                    var clientName = incomingData.Remove(incomingData.Length - ConnectSignal.Length);
                     Dispatcher.Invoke((() => listClients.Items.Add(clientName)));
                     await SendMessageToClients($"[SERVER]: {clientName} connected!~");
                 }
@@ -126,9 +145,9 @@ namespace _03_ChatServerWPF
                 /***
                  * New chat message
                  */
-                if (incomingData.EndsWith(messageSignal))
+                if (incomingData.EndsWith(MessageSignal))
                 {
-                    var chatMessage = incomingData.Remove(incomingData.Length - messageSignal.Length);
+                    var chatMessage = incomingData.Remove(incomingData.Length - MessageSignal.Length);
                     AddMessage(chatMessage);
                     await SendMessageToClients($"{chatMessage}~");
                 }
@@ -136,23 +155,26 @@ namespace _03_ChatServerWPF
                 /***
                  * Client disconnected
                  */
-                if (incomingData.EndsWith(clientDisconnectSignal))
+                if (incomingData.EndsWith(ClientDisconnectSignal))
                 {
-                    message = incomingData.Remove(incomingData.Length - clientDisconnectSignal.Length);
+                    message = incomingData.Remove(incomingData.Length - ClientDisconnectSignal.Length);
                     AddMessage(message);
                     await SendMessageToClients($"{message}~");
-                    await SendDisconnectMessageToClient(tcpClient, clientDisconnectSignal);
+                    await SendDisconnectMessageToClient(tcpClient, ClientDisconnectSignal);
                     Dispatcher.Invoke(() => listClients.Items.RemoveAt(_clientList.IndexOf(tcpClient)));
                     _clientList.Remove(tcpClient);
                 }
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         private async void StopServer()
         {
             const string disconnectingMessage = "[SERVER]: Server is closed!DISCONNECTED_SERVER~";
             await Task.Run(() => SendMessageToClients(disconnectingMessage));
-            
+
             foreach (var client in _clientList)
             {
                 Debug.WriteLine("Client X stopped!");
@@ -171,6 +193,11 @@ namespace _03_ChatServerWPF
             await Listener(serverPort, serverBufferSize, true);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
         private async Task SendMessageToClients(string message)
         {
             if (_clientList.Count > 0)
@@ -185,6 +212,12 @@ namespace _03_ChatServerWPF
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tcpClient"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
         private async Task SendDisconnectMessageToClient(TcpClient tcpClient, string message)
         {
             _networkStream = tcpClient.GetStream();
@@ -195,6 +228,26 @@ namespace _03_ChatServerWPF
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private async void CloseServerConnection(object sender, CancelEventArgs e)
+        {
+            if (_tcpListener.Server.Connected)
+            {
+                const string disconnectingMessage = "[SERVER]: Server is closed!DISCONNECTED_SERVER~";
+                await Task.Run(() => SendMessageToClients(disconnectingMessage));
+                _tcpListener.Stop();
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stringVal"></param>
+        /// <returns></returns>
         private int ParseStringToInt(string stringVal)
         {
             int.TryParse(stringVal, out var intVal);
