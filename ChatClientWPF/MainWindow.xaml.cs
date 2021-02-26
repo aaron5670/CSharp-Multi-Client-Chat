@@ -13,15 +13,17 @@ using System.Windows;
 namespace _03_ChatClientWPF
 {
     /// <summary>
-    /// 
+    /// TCP chat client
     /// </summary>
     public partial class MainWindow
     {
         private TcpClient _tcpClient;
         private NetworkStream _networkStream;
+        private const string ServerDisconnectSignal = "DISCONNECTED_SERVER~";
+        private const string ClientDisconnectSignal = "DISCONNECTED_CLIENT~";
 
         /// <summary>
-        /// 
+        /// Initialize main window
         /// </summary>
         public MainWindow()
         {
@@ -29,7 +31,7 @@ namespace _03_ChatClientWPF
         }
 
         /// <summary>
-        /// 
+        /// Add messages to messages ListBox
         /// </summary>
         /// <param name="message"></param>
         private void AddMessage(string message)
@@ -38,7 +40,7 @@ namespace _03_ChatClientWPF
         }
 
         /// <summary>
-        /// 
+        /// This method will handle the connect and disconnect button functionality
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -84,7 +86,7 @@ namespace _03_ChatClientWPF
         }
 
         /// <summary>
-        /// 
+        /// This method creates the TCP connection
         /// </summary>
         /// <param name="ipAddress"></param>
         /// <param name="port"></param>
@@ -115,7 +117,7 @@ namespace _03_ChatClientWPF
         }
 
         /// <summary>
-        /// 
+        /// This method will send the connection data
         /// </summary>
         /// <param name="name"></param>
         private async void SendConnectionData(string name)
@@ -137,13 +139,11 @@ namespace _03_ChatClientWPF
         }
 
         /// <summary>
-        /// 
+        /// This method reads all incoming data / messages
         /// </summary>
         /// <param name="bufferSize"></param>
         private async void ReceiveData(int bufferSize)
         {
-            const string clientDisconnectSignal = "DISCONNECTED_CLIENT~";
-            const string serverDisconnectSignal = "DISCONNECTED_SERVER~";
             var buffer = new byte[bufferSize];
             var networkStream = _tcpClient.GetStream();
 
@@ -174,15 +174,21 @@ namespace _03_ChatClientWPF
                     break;
                 }
 
-                if (incomingMessage.EndsWith(clientDisconnectSignal))
+                /***
+                 * Client disconnected
+                 */
+                if (incomingMessage.EndsWith(ClientDisconnectSignal))
                 {
                     AddMessage("[CLIENT]: ❌ Disconnected!");
                     break;
                 }
 
-                if (incomingMessage.EndsWith(serverDisconnectSignal))
+                /***
+                 * Server disconnected
+                 */
+                if (incomingMessage.EndsWith(ServerDisconnectSignal))
                 {
-                    message = incomingMessage.Remove(incomingMessage.Length - serverDisconnectSignal.Length);
+                    message = incomingMessage.Remove(incomingMessage.Length - ServerDisconnectSignal.Length);
                     AddMessage(message);
 
                     Dispatcher.Invoke(() => btnConnect.Content = "Connect");
@@ -201,7 +207,7 @@ namespace _03_ChatClientWPF
         }
 
         /// <summary>
-        /// 
+        /// This method will handle the send message button functionality
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -228,7 +234,7 @@ namespace _03_ChatClientWPF
         }
 
         /// <summary>
-        /// 
+        /// This method sends a user chat message to the server
         /// </summary>
         /// <param name="clientName"></param>
         /// <param name="message"></param>
@@ -247,14 +253,13 @@ namespace _03_ChatClientWPF
         }
 
         /// <summary>
-        /// 
+        /// This method will do the disconnect functionality
         /// </summary>
         /// <returns></returns>
         private async Task DisconnectClient()
         {
-            const string clientDisconnectSignal = "DISCONNECTED_CLIENT~";
             var disconnectMessage = txtNameClient.Text + ": is disconnected!";
-            disconnectMessage += clientDisconnectSignal;
+            disconnectMessage += ClientDisconnectSignal;
 
             _networkStream = _tcpClient.GetStream();
 
@@ -266,7 +271,7 @@ namespace _03_ChatClientWPF
         }
 
         /// <summary>
-        /// 
+        /// This method will run when user closes the client (prevent a crash)
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -276,7 +281,11 @@ namespace _03_ChatClientWPF
         }
 
         /// <summary>
-        /// 
+        /// Data validator method validates:
+        ///     - clientName
+        ///     - ipAddress
+        ///     - port
+        ///     - bufferSize
         /// </summary>
         /// <param name="clientName"></param>
         /// <param name="ipAddress"></param>
@@ -305,7 +314,7 @@ namespace _03_ChatClientWPF
         }
 
         /// <summary>
-        /// 
+        /// Validate a users chat message
         /// </summary>
         /// <param name="message"></param>
         /// <returns></returns>
@@ -315,7 +324,7 @@ namespace _03_ChatClientWPF
         }
 
         /// <summary>
-        /// 
+        /// Parse string to integer when possible
         /// </summary>
         /// <param name="stringVal"></param>
         /// <returns></returns>

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -12,16 +11,18 @@ using System.Windows;
 
 namespace _03_ChatServerWPF
 {
+    /// <summary>
+    /// TCP chat server
+    /// </summary>
     public partial class MainWindow
     {
         private TcpListener _tcpListener;
         private NetworkStream _networkStream;
         private List<TcpClient> _clientList = new List<TcpClient>();
         private bool _serverStarted;
-        
         private const string ConnectSignal = "CONNECT~";
         private const string MessageSignal = "MESSAGE~";
-        private const string ServerDisconnectSignal = "DISCONNECT_SERVER~";
+        private const string ServerDisconnectSignal = "DISCONNECTED_SERVER~";
         private const string ClientDisconnectSignal = "DISCONNECTED_CLIENT~";
 
         /// <summary>
@@ -55,7 +56,8 @@ namespace _03_ChatServerWPF
                     btnStartStop.Content = "Stop";
                     var serverPort = ParseStringToInt(serverPortValue.Text);
                     var serverBufferSize = ParseStringToInt(serverBufferSizeValue.Text);
-                    await Listener(serverPort, serverBufferSize);
+                    IPAddress.TryParse(serverIpAddress.Text, out var ipAddress);
+                    await Listener(ipAddress, serverPort, serverBufferSize);
                 }
                 else
                 {
@@ -70,20 +72,22 @@ namespace _03_ChatServerWPF
         }
 
         /// <summary>
-        /// 
+        /// This method starts or stops the TCP listener
+        /// Also listens for new TCP clients
         /// </summary>
+        /// <param name="ipAddress"></param>
         /// <param name="serverPort"></param>
         /// <param name="serverBufferSize"></param>
         /// <param name="stopServer"></param>
         /// <returns></returns>
-        private async Task Listener(int serverPort, int serverBufferSize, bool stopServer = false)
+        private async Task Listener(IPAddress ipAddress, int serverPort, int serverBufferSize, bool stopServer = false)
         {
             try
             {
                 if (!stopServer)
                 {
                     _serverStarted = true;
-                    _tcpListener = new TcpListener(IPAddress.Any, serverPort);
+                    _tcpListener = new TcpListener(ipAddress, serverPort);
                     _tcpListener.Start();
                     AddMessage($"[SERVER]: Started on port {serverPort.ToString()}");
                 }
@@ -108,12 +112,13 @@ namespace _03_ChatServerWPF
             }
             catch (SocketException)
             {
-                MessageBox.Show("Server port already in use");
+                btnStartStop.Content = "Start";
+                MessageBox.Show("Server port already in use or the IP Address or server port is invalid!");
             }
         }
 
         /// <summary>
-        /// This method reads all incoming 
+        /// This method reads all incoming data / messages
         /// </summary>
         /// <param name="tcpClient"></param>
         /// <param name="bufferSize"></param>
@@ -131,7 +136,6 @@ namespace _03_ChatServerWPF
                 {
                     while (incomingData.IndexOf("~") < 0)
                     {
-                        Debug.WriteLine("✅ Incoming message");
                         var bytes = await networkStream.ReadAsync(buffer, 0, bufferSize);
                         message = Encoding.ASCII.GetString(buffer, 0, bytes);
                         incomingData += message;
@@ -201,7 +205,8 @@ namespace _03_ChatServerWPF
 
             var serverPort = ParseStringToInt(serverPortValue.Text);
             var serverBufferSize = ParseStringToInt(serverBufferSizeValue.Text);
-            await Listener(serverPort, serverBufferSize, true);
+            IPAddress.TryParse(serverIpAddress.Text, out var ipAddress);
+            await Listener(ipAddress, serverPort, serverBufferSize, true);
         }
 
         /// <summary>
@@ -249,7 +254,7 @@ namespace _03_ChatServerWPF
         {
             if (_tcpListener != null && _tcpListener.Server.Connected)
             {
-                var disconnectingMessage = $"[SERVER]: Server is closed!{ServerDisconnectSignal}~";
+                var disconnectingMessage = $"[SERVER]: Server is closed!{ServerDisconnectSignal}";
                 await Task.Run(() => SendMessageToClients(disconnectingMessage));
                 _tcpListener.Stop();
             }
